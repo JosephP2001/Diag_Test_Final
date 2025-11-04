@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiagnosticTest - Pokémon API</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="mainWrapper">
+        <!-- Containers side by side -->
+        <div class="mainContainer">
+            <!-- LEFT -->
+            <div class="container">
+                <div class="card1">
+                    <div class="left1">
+                        <div class="image1">
+                            <img id="pokemon1-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" alt="Loading...">
+                        </div>
+                        <button onclick="loadPokemon(1)">Load Random Pokémon</button>
+                    </div>
+                    <div class="right1">
+                        <p id="pokemon1-info">Click the button to load a Pokémon!</p>
+                    </div>
+                </div>
+            </div>
+            <!-- RIGHT -->
+            <div class="container">
+                <div class="card2">
+                    <div class="left2">
+                        <div class="image2">
+                            <img id="pokemon2-img" src="second.webp" alt="Loading...">
+                        </div>
+                        <button onclick="loadPokemon(2)">Load Random Pokémon</button>
+                    </div>
+                    <div class="right2">
+                        <p id="pokemon2-info">Click the button to load a Pokémon!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table below containers -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Height</th>
+                    </tr>
+                </thead>
+                <tbody id="pokemon-table">
+                    <tr>
+                        <td colspan="4">Loading Pokémon data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // API BASE URL
+        const API_URL = 'https://pokeapi.co/api/v2/pokemon';
+
+        // Function to load a random Pokémon into a card
+        async function loadPokemon(cardNumber) {
+            try {
+                // Generate random Pokémon ID (1-150 for original Pokémon)
+                const randomId = Math.floor(Math.random() * 150) + 1;
+                
+                // Fetch data from API
+                const response = await fetch(`${API_URL}/${randomId}`);
+                
+                // Check if request was successful
+                if (!response.ok) {
+                    throw new Error('Pokémon not found');
+                }
+                
+                // Convert response to JSON
+                const pokemon = await response.json();
+                
+                // Update the corresponding card
+                const imgElement = document.getElementById(`pokemon${cardNumber}-img`);
+                const infoElement = document.getElementById(`pokemon${cardNumber}-info`);
+                
+                // Update image
+                imgElement.src = pokemon.sprites.other['official-artwork'].front_default;
+                imgElement.alt = pokemon.name;
+                
+                // Update info text
+                const types = pokemon.types.map(t => t.type.name).join(', ');
+                infoElement.innerHTML = `
+                    <strong>${pokemon.name.toUpperCase()}</strong><br>
+                    Type: ${types}<br>
+                    Height: ${pokemon.height / 10}m<br>
+                    Weight: ${pokemon.weight / 10}kg<br>
+                    Base Experience: ${pokemon.base_experience}
+                `;
+                
+            } catch (error) {
+                console.error('Error loading Pokémon:', error);
+                alert('Error loading Pokémon. Please try again!');
+            }
+        }
+
+        // Function to load multiple Pokémon for the table
+        async function loadPokemonTable() {
+            try {
+                const tableBody = document.getElementById('pokemon-table');
+                tableBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+                
+                // Load 5 random Pokémon
+                const promises = [];
+                for (let i = 0; i < 5; i++) {
+                    const randomId = Math.floor(Math.random() * 150) + 1;
+                    promises.push(fetch(`${API_URL}/${randomId}`).then(r => r.json()));
+                }
+                
+                // Wait for all requests to complete
+                const pokemons = await Promise.all(promises);
+                
+                // Clear table and add rows
+                tableBody.innerHTML = '';
+                pokemons.forEach((pokemon, index) => {
+                    const row = document.createElement('tr');
+                    const types = pokemon.types.map(t => t.type.name).join(', ');
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${pokemon.name}</td>
+                        <td>${types}</td>
+                        <td>${pokemon.height / 10}m</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading table:', error);
+                document.getElementById('pokemon-table').innerHTML = 
+                    '<tr><td colspan="4">Error loading data</td></tr>';
+            }
+        }
+
+        // Load table data when page loads
+        window.addEventListener('load', loadPokemonTable);
+    </script>
+</body>
+</html>
